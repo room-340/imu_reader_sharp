@@ -48,6 +48,7 @@
             // 
             // fileButton
             // 
+            this.fileButton.Enabled = false;
             this.fileButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.fileButton.Location = new System.Drawing.Point(12, 12);
             this.fileButton.Name = "fileButton";

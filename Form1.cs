@@ -122,7 +122,7 @@ namespace imu_reader_sharp
         // Проверка на уловие доступности кнопки чтения
         private void check_read_available(object sender, EventArgs e)
         {
-            if ((comBox.Items.Count != 0))
+            if ((comBox.Items.Count != 0) && !flags[1])
                 readButton.Enabled = true;
             else
                 readButton.Enabled = false;
@@ -134,17 +134,36 @@ namespace imu_reader_sharp
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
             char[] buffer = new char[8192];
 	        int numb = 0;
-			Connect();
+            try
+            {
+                Connect();
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Неудалось подключиться к выбранному СОМ порту.\n"+
+                    "Пожалуйста, проверьте правильно ли выбран СОМ порт\n" + 
+                    "и включен ли датчик.");
+                return;
+            }
             infoLabel.Text = "Идет очистка";
             this.Update();
             active_com.DiscardInBuffer();
             active_com.Write("f");
             timer.Start();
-			while (active_com.BytesToWrite < 6)
-			{
+            while (active_com.BytesToRead < 6)
+            {
                 if (timer.ElapsedMilliseconds > 1000)
-                    break;  // Временная задержка, релизный вариант
-			}
+                {
+                    MessageBox.Show("Не получен ответ от датчика. Проверьте подключение.");
+                    Disconnect();
+                    return;
+                }
+            }
+            //while (active_com.BytesToWrite < 6)
+            //{
+            //    if (timer.ElapsedMilliseconds > 1000)
+            //        break;  // Временная задержка, релизный вариант
+            //}
             timer.Stop();
             numb = active_com.Read(buffer, 0, 6);
             MessageBox.Show("Очистка закончена. Выключите модуль");
@@ -193,6 +212,8 @@ namespace imu_reader_sharp
             double[] date = new double[ticks2.Length];
             byte[] buffer = new byte[2];
             byte[] buffer2 = new byte[4];
+            double[] corr_mag = { 2.1247, 2.6763, 1.8819, 2.3015, 2.2950, 1, 1.9868, 0.4620, 1, 2.0309, 0.2124, 0.8475, 2.6937, 2.2799, 1.8461 };
+            double[] corr_gyr = { 1.1111, 0.9333, 0.9333, 1.0185, 1.5122, 1, 0.9148, 1.1154, 1, 1.1129, 1.1028, 1.1160, 1.5063, 0.9556, 0.9111 };
             infoLabel.Text = "Идет сохранение файла.";
             this.Update();
             for (int i = 0; i < full_file.Length - 30; i++)
@@ -222,18 +243,18 @@ namespace imu_reader_sharp
                             a[k, 2] = -(double)BitConverter.ToInt16(buffer, 0) * 0.0018;
 
                             buffer[0] = pack[13]; buffer[1] = pack[14];
-                            w[k, 0] = (double)BitConverter.ToInt16(buffer, 0) * 0.00053375;
+                            w[k, 0] = (double)BitConverter.ToInt16(buffer, 0) * 0.00053264 * corr_gyr[block_index - 1];
                             buffer[0] = pack[11]; buffer[1] = pack[12];
-                            w[k, 1] = (double)BitConverter.ToInt16(buffer, 0) * 0.00053375;
+                            w[k, 1] = (double)BitConverter.ToInt16(buffer, 0) * 0.00053264 * corr_gyr[block_index - 1];
                             buffer[0] = pack[15]; buffer[1] = pack[16];
-                            w[k, 2] = (double)BitConverter.ToInt16(buffer, 0) * 0.00053375;
+                            w[k, 2] = (double)BitConverter.ToInt16(buffer, 0) * 0.00053264 * corr_gyr[block_index - 1];
 
                             buffer[0] = pack[17]; buffer[1] = pack[18];
-                            m[k, 0] = -(double)BitConverter.ToInt16(buffer, 0) * 0.0000625;
+                            m[k, 0] = -(double)BitConverter.ToInt16(buffer, 0) * 0.00030518 * corr_mag[block_index - 1];
                             buffer[0] = pack[19]; buffer[1] = pack[20];
-                            m[k, 1] = (double)BitConverter.ToInt16(buffer, 0) * 0.0000625;//* 0.00030518;
+                            m[k, 1] = (double)BitConverter.ToInt16(buffer, 0) * 0.00030518 * corr_mag[block_index - 1];
                             buffer[0] = pack[21]; buffer[1] = pack[22];
-                            m[k, 2] = -(double)BitConverter.ToInt16(buffer, 0) * 0.0000625;
+                            m[k, 2] = -(double)BitConverter.ToInt16(buffer, 0) * 0.00030518 * corr_mag[block_index - 1];
 
                             buffer[0] = pack[23]; buffer[1] = pack[24];
                             q[k, 0] = (double)BitConverter.ToInt16(buffer, 0);
@@ -347,15 +368,15 @@ namespace imu_reader_sharp
                 ma = single_correction(accl_c, a[i, 0], a[i, 1], a[i, 2]);
                 mw = single_correction(gyro_c, w[i, 0], w[i, 1], w[i, 2]);
                 //----------------------------------------------------------------------
-                mw[0] = w[i, 0];
-                mw[1] = w[i, 1];
-                mw[2] = w[i, 2];
-                ma[0] = a[i, 0];
-                ma[1] = a[i, 1];
-                ma[2] = a[i, 2];
-                mm[0] = m[i, 0];
-                mm[1] = m[i, 1];
-                mm[2] = m[i, 2];
+                //mw[0] = w[i, 0];
+                //mw[1] = w[i, 1];
+                //mw[2] = w[i, 2];
+                //ma[0] = a[i, 0];
+                //ma[1] = a[i, 1];
+                //ma[2] = a[i, 2];
+                //mm[0] = m[i, 0];
+                //mm[1] = m[i, 1];
+                //mm[2] = m[i, 2];
                 //----------------------------------------------------------------------
                 angles[0] = (AHRS_result.Item1.At(0));
                 angles[1] = (AHRS_result.Item1.At(1));
@@ -440,6 +461,7 @@ namespace imu_reader_sharp
         // Функция для чтения данных напрямую с датчика
         private void readButton_Click(object sender, EventArgs e)
         {
+            readButton.Enabled = false;
             try
             {
                 fileBox.Items.Clear();
@@ -470,8 +492,9 @@ namespace imu_reader_sharp
                     {
                         if (timer.ElapsedMilliseconds > 1000)
                         {
-                            MessageBox.Show("Не получен ответ от датчика.");
+                            MessageBox.Show("Не получен ответ от датчика. Проверьте подключение.");
                             Disconnect();
+                            readButton.Enabled = true;
                             return;
                         }
                     }
@@ -481,6 +504,7 @@ namespace imu_reader_sharp
                     {
                         MessageBox.Show("Не получен ответ от датчика. Этап 1.");
                         Disconnect();
+                        readButton.Enabled = true;
                         return;
                     }
                     block_index = buffer[0] * (int)Math.Pow(2, 24) + buffer[1] * (int)Math.Pow(2, 16) + buffer[2] * (int)Math.Pow(2, 8) + buffer[3];
@@ -499,6 +523,7 @@ namespace imu_reader_sharp
                     {
                         MessageBox.Show("Не получен ответ от датчика. Этап 2.");
                         Disconnect();
+                        readButton.Enabled = true;
                         return;
                     }
 
@@ -570,6 +595,8 @@ namespace imu_reader_sharp
                 {
                     Disconnect();
                     //MessageBox.Show("Чтение завершено. " + control.ElapsedMilliseconds + " ms elapsed.");
+                    fileButton.Enabled = true;
+                    flags[1] = true;    // this flag is used to keep readButton locked (unavailble)
                     MessageBox.Show("Чтение завершено.");
                     files_st = new file[files_q.Count];
                     for (int q = 0; q < files_st.Length; q++)
@@ -582,115 +609,17 @@ namespace imu_reader_sharp
             }
             catch (Exception crit_error)
             {
-                MessageBox.Show("Произошла критическая ошибка. Программа будет закрыта.\n" +
-                "Пожалуйста обратитесь к разработчику\n" + 
-                "Ошибка: " + crit_error.Message);
+                MessageBox.Show("Произошла критическая ошибка. Возможные причины ошибки:\n" +
+                "• выбранный СОМ порт не связан с датчиком СКВП\n" + 
+                "\n Код ошибки: " + crit_error.Message);
                 if (active_com.IsOpen)
                     active_com.Close();
-                Application.Exit();
+                readButton.Enabled = true;
+                return;
             }
+            return;
         }
 
-        // Функция чтения данных, основанная на коде из СИ
-        /*
-        private void readButton_Click_c(object sender, EventArgs e)
-        {
-            byte[] buffer = new byte[8192];
-            int numb = 0;
-            char[] tempS = new char[200];
-            long numfiles = 0;
-            char[] log_name_c = new char[2048];
-            int sumb = 0;
-            long ifile = 0;
-            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-            if ((validCOM == 0) && (selected_com != "COM0"))
-            {
-                Connect();
-                FileStream fs = File.Create(log_name, 2048, FileOptions.None);
-                StreamWriter str_wr = new StreamWriter(fs);
-
-                infoLabel.Text = "Идет считывание";
-                active_com.DiscardInBuffer();
-                sumb = 0;
-                active_com.Write("?");
-                timer.Start();
-                while (active_com.BytesToRead < 4)
-                {
-                    if (timer.ElapsedMilliseconds > 1000)
-                    {
-                        MessageBox.Show("Ошибка в передаче данных. Этап 1.");
-                        break;
-                    }
-                }
-                timer.Stop();
-                numb = active_com.Read(buffer, 0, 4);
-                if (numb == 4)
-                    numfiles = buffer[0] * (int)Math.Pow(2, 24) + buffer[1] * (int)Math.Pow(2, 16) + buffer[2] * (int)Math.Pow(2, 8) + buffer[3];
-                else
-                    numfiles = 0;
-                ifile = 1;
-                progressBar.Maximum = (int)numfiles;
-                progressBar.Value = 0;
-                while (ifile < numfiles)
-                {
-                    progressBar.Value++;
-                    active_com.DiscardInBuffer();
-                    sumb = 0;
-                    active_com.Write("r");
-                    timer.Start();
-                    while (active_com.BytesToRead < 4)
-                    {
-                        if (timer.ElapsedMilliseconds > 1000)
-                        {
-                            MessageBox.Show("Ошибка в передаче данных. Этап 2.");
-                            break;
-                        }
-                    }
-                    timer.Stop();
-                    numb = active_com.Read(buffer, 0, 4);
-                    if (numb == 4)
-                        ifile = buffer[0] * (int)Math.Pow(2, 24) + buffer[1] * (int)Math.Pow(2, 16) + buffer[2] * (int)Math.Pow(2, 8) + buffer[3];
-                    else
-                        ifile = 0;
-                    str_wr.WriteLine("ifile = " + ifile);
-                    while (sumb != 4096 * 255)
-                    {
-                        active_com.DiscardInBuffer();
-                        sumb = 0;
-                        active_com.Write(" ");
-                        timer.Start();
-                        while (active_com.BytesToRead < 4096)
-                        {
-                            if (timer.ElapsedMilliseconds > 1000)
-                            {
-                                MessageBox.Show("Ошибка в передаче данных. Этап 3.");
-                                break;
-                            }
-                        }
-                        timer.Stop();
-                        numb = active_com.Read(buffer, 0, 4096);
-                        for (int q = 0; q < numb; q++)
-                            sumb += buffer[q];
-                        str_wr.Write(sumb + " ");
-                        if (numb < 4096)
-                        {
-                            MessageBox.Show("Ошибка в передаче данных. Этап 4.");
-                            break;
-                        }
-                    }
-                    str_wr.WriteLine();
-                }
- 
-                str_wr.Flush();
-                str_wr.Close();
-            }
-            if (validCOM == 1)
-            {
-                Disconnect();
-                MessageBox.Show("Чтение завершено");
-            }
-        }
-*/
 
         private void comBox_Click(object sender, EventArgs e)
         {
@@ -841,92 +770,93 @@ namespace imu_reader_sharp
             switch (index)
             {
                 case 1:
-                    double[] temp1 = {-1.3000, -1.3499, -1.2180, -0.5191, 1.2598, 0.8968,
-                                         1.1259, -0.8541, -1.4552, -0.1676, 0.0201, 0.1032 };
+                    double[] temp1 = {-0.134554971627891, -0.169866122475033, -0.202500838310812,  0.034829436699240,
+                                       0.015653258626247, -0.104390869051738,  0.064454373647298, -0.017163667769296,
+                                      -0.062138114316372, -0.309432633239306,  0.276758641852411,  0.249018882676053 };
                     result = temp1;
                     break;
                 case 2:
-                    double[] temp2 = {-1.021584893111037,  -1.156822840186938,  -1.059527431706735,   0.405595881908856,
-                       0.954589891425432,  -0.069541017965736,   0.991639731762399,  -1.012866646546024,
-                      -0.886632983175849,  -0.065839849453693,   0.059178141113860,   0.229560149816208 };
+                    double[] temp2 = { 0.081806154844560,  0.062209389130613, 0.027916502361779, 0.015233593727695,
+                                      -0.054198476587063, -0.054585801715305, 0.051432587140506, 0.038408277655370,
+                                      -0.060609142915836, -0.208061037298601, 0.135836886676739, 0.634134771714766 };
                     result = temp2;
                     break;
                 case 3:
-                    double[] temp3 = {0.238481805936342,  -0.611518102386768,  -0.521946604623734,  -0.152499267950600,
-                       0.380041463141051,  -0.089921812966795,  -0.029707070918285,   0.777735008725552,
-                      -0.263038218323014,   1.102625052444242,  -0.174805428028501,   0.764500679478734 };
+                    double[] temp3 = { 0.458272372057363,  0.4698443746463363,  0.398584957673889, -0.055693317331068,
+                                      -0.010570596229097, -0.203110705399989,  -0.377527919967003,  0.270468605720978,
+                                      -0.149332818967011,  0.475257740309551,  -2.966742466150262,  1.627687981971065 };
                     result = temp3;
                     break;
                 case 4:
-                    double[] temp4 = {-0.912310601920176,  -0.035122859804258,  -0.980824053980284,  -0.900924288276854,
-                      -0.392141063030012,  -0.212147078216013,   0.370184540925128,  -0.138611784797257,
-                       0.592181216595855,  -0.716249303213732,   0.743440070172089,   0.417833919696198 };
+                    double[] temp4 = {-0.042208562725995, -0.071552336579850, -0.108843337775363,  0.062510996851477,
+                                       0.057890422486343, -0.086535382681452,  0.049292231776459, -0.080923086306036,
+                                      -0.050841640324860, -0.367026110307215, -0.228424429063739,  0.018618412643007 };
                     result = temp4;
                     break;
                 case 5:
-                    double[] temp5 = {-0.810295610308645,  -0.669847770840476,   0.029900885597606,  -0.314087876668212,
-                        -0.489991754352551,  -0.196143690771996,   0.785352181879690,  -0.148859193029027,
-                        0.475841206204676,  -0.674462559992835,   0.797605908162643,   1.039652155282594 };
+                    double[] temp5 = {-0.424303427421749, -0.359367760893619, -0.465418690783676, -0.205533844222942,
+                                       0.094110172879848,  0.183649687166995,  0.297668170974309, -0.052378635640458,
+                                      -0.303788615146486, -0.120571643502485, -0.275194585890605, -0.564118171104715 };
                     result = temp5;
                     break;
                 case 6:
-                    double[] temp6 = {-0.170985488990754,  -0.564445824510332,  -0.156834833150726,  -0.308524525175852,
-                       0.442976518336103,  -0.358382840398978,  -0.080578225278669,   0.617372103949350,
-                      -0.541560455196209,   0.718141250811105,  -0.546677511918727,   1.013917065538093 };
+                    double[] temp6 = {0, 0, 0, 0,
+                                      0, 0, 0, 0,
+                                      0, 0, 0, 0 };
                     result = temp6;
                     break;
                 case 7:
-                    double[] temp7 = {0.240929547813333,  -0.055331307635026,   0.080962491207260,   0.111673173134500,
-                      -0.437371531722260,   0.086278316536676,  -0.156009284276460,  -0.450383773465459,
-                      -0.232586543173110,   1.800622790457513,   0.479391322929313,  -1.645807763696289 };
+                    double[] temp7 = {-0.240914923823246, -0.244257205853813, -0.290224811056730, -0.043881711122800,
+                                       0.048757077417875,  0.008208971941270,  0.025562339992882, -0.060859836339856,
+                                      -0.027830322186134, -0.516875672859689, -0.376825683133807,  0.391020793105595 };
                     result = temp7;
                     break;
                 case 8:
-                    double[] temp8 = {-0.657211729785750,  -0.751518105983042,  -0.502998987070861,   0.346979570434948,
-                      -0.626698848495405,   0.854645387115907,  -0.722084569035857,  -0.328055065021069,
-                      -0.229782299399703,  -0.357543764086528,  -0.658127285343566,   0.346576778962207 };
+                    double[] temp8 = {-0.193363141812943, -0.185647139916231, -0.187075566490814, -0.039505163417496,
+                                      -0.008230410275946, -0.005236537568003,  0.014502200125660,  0.013378901876117,
+                                      -0.000114055379080,  0.362615458991420, -0.010981130779454, -0.310863872669469 };
                     result = temp8;
                     break;
                 case 9:
-                    double[] temp9 = {-0.626836215836308,  -0.013759850146307,  -0.583068885503070,   0.859006753692338,
-                      -0.291104097898408,   0.359496708414707,  -0.377515731153946,  -0.003959749268316,
-                      -0.269023628503547,  -0.839470996073222,  -0.734894289704346,   0.173586855759935 };
+                    double[] temp9 = {0, 0, 0, 0,
+                                      0, 0, 0, 0,
+                                      0, 0, 0, 0 };
                     result = temp9;
                     break;
                 case 10:
-                    double[] temp10 = {-0.369311287771329,  -0.619181805694075,   0.215860213252399,  -0.202174116935395,
-                      -0.469592802232751,  -0.047691482924571,   0.275440905803689,  -0.360029056603724,
-                       0.184994296407090,  -0.770865355323793,   0.374651486398312,   1.142034879854652 };
+                    double[] temp10 = {-0.214562520791108, -0.187883332536205, -0.277861975688346, -0.137909456008459,
+                                       -0.172155886971929,  0.099068162379547,  0.139973434960603,  0.193066595335211,
+                                       -0.103776828163562,  0.120096982489579, -0.040089684385431, -0.603978962476401 };
                     result = temp10;
                     break;
                 case 11:
-                    double[] temp11 = {0.608714881216204,   0.726988256983956,   0.548780040935389,   0.016242466383838,
-                       0.008309177330682,  -0.358605622379460,  -0.406898271841329,  -0.176070107760827,
-                       0.023260260319988,  -0.615605787372553,                   0,  -0.736861602878822 };
+                    double[] temp11 = { 0.024254400810888, -0.000191421165420, 0.012001419382526, -0.005829588688648,
+                                        0.000269400177322,  0,                 0,                 -0.000212330052886,
+                                       -0.012841495142416,  0.004324779365371, 0.000158856427498,  0.014564565705401 };
                     result = temp11;
                     break;
                 case 12:
-                    double[] temp12 = {0.174793461009216,  -0.040792970147182,   0.416590023305863,   0.023815283418015,
-                      -0.400898824923381,  -0.056977093394991,  -0.137939234650323,  -0.275073547098045,
-                      -0.226813306028076,   1.386816689877866,   0.503695987968843,  -1.311523063280292 };
+                    double[] temp12 = {-0.361816068788220, -0.503022110674979,  0.324283454227877,  0.184687176080893,
+                                       -0.699580000262199,  0.529743118274722, -0.346500075310962, -0.262893356413696,
+                                        0.038991767022319,  0.882918389028600,  0.896736235385205, -0.724825336502655 };
                     result = temp12;
                     break;
                 case 13:
-                    double[] temp13 = {-0.363402668053064,  -1.094360523138415,  -0.337177750046436,  -0.150554901049520,
-                       0.760814281494252,  -0.527695809751047,  -0.366683816407952,   0.694017973652759,
-                      -0.257690691379724,   0.940590498718544,  -0.603082996186667,   0.915339225862064 };
+                    double[] temp13 = {0.292299625536457, -0.041130297118642, -0.016935671234575, -0.186873794517603,
+                                       0.447456168340141, -0.598691444750701, -0.391097146546598,  0.166982277982097,
+                                       0.114974713369710,  0.447618305778757, -0.880651590137834, -0.240851294538743 };
                     result = temp13;
                     break;
                 case 14:
-                    double[] temp14 = {0.239432068058017,  -0.725844731558349,  -1.151204001242439,   0.549384999741005,
-                       0.017479681993509,   0.446775656927678,  -0.105826078256205,  -0.233477063739925,
-                      -0.014288927249738,   1.072218089476175,   0.355024708548398,  -0.194902780695747 };
+                    double[] temp14 = {-0.082885214188453, -0.063940435938370, -0.118792471698874, -0.060946059857216,
+                                       -0.010365592704268,  0.044709847652720,  0.050172278860770, -0.000086434778537,
+                                       -0.047387645543701, -0.179654140823241, -0.272829871996595, -0.100126112947171 };
                     result = temp14;
                     break;
                 case 15:
-                    double[] temp15 = {0.106974544824006,  -0.921067620149456,  -0.544783980541099,  -0.113463751891383,
-                       0.575096563967160,  -0.215872226257520,  -0.106232440232434,   0.665018879611869,
-                      -0.120415653314238,   0.975928019145445,  -0.232693130860269,   0.505738827768481 };
+                    double[] temp15 = {-0.291979902171188, -0.314939575027430, -0.370458864422279,  0.227311431380614,
+                                        0.332919171156001, -0.229938714575351,  0.061123733639406, -0.325634729687311,
+                                       -0.012271036512611, -0.437449062836185, -0.154637697760516, -0.442729782693485 };
                     result = temp15;
                     break;
                 default:
