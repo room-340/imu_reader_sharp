@@ -316,7 +316,7 @@ namespace imu_reader_sharp
             Kalman_class.Sensors Sensors = new Kalman_class.Sensors(new DenseMatrix(1, 3, 0), new DenseMatrix(1, 3, 0), new DenseMatrix(1, 3, 0));
             Matrix Initia_quat = new DenseMatrix(1, 4, 0);
             Initia_quat.At(0, 0, 1);
-            Kalman_class.State State = new Kalman_class.State(Math.Pow(10, 2), Math.Pow(10, 2), Math.Pow(10, -3),
+            Kalman_class.State State = new Kalman_class.State(Kalman_class.ACCLERATION_NOISE, Kalman_class.MAGNETIC_FIELD_NOISE, Kalman_class.ANGULAR_VELOCITY_NOISE,
                 Math.Pow(10, -6), Math.Pow(10, -15), Math.Pow(10, -15), Initia_quat);
             double[] angles = new double[3];
             double[] mw, ma, mm;

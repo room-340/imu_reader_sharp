@@ -3,6 +3,9 @@ using MathNet.Numerics.LinearAlgebra.Double;
 
 public static class Kalman_class
 {
+    public const double ACCLERATION_NOISE = 100;
+    public const double MAGNETIC_FIELD_NOISE = 100;
+    public const double ANGULAR_VELOCITY_NOISE = 0.001;
     public struct Parameters
     {
         public double dT;
@@ -31,8 +34,8 @@ public static class Kalman_class
             accl_coefs = Accl_coefs;
             magn_coefs = Magn_coefs;
             gyro_coefs = Gyro_coefs;
-            accl_noise = (double) Math.Pow(10, 2);
-            magn_noise = (double)Math.Pow(10, 2);
+            accl_noise = ACCLERATION_NOISE;
+            magn_noise = MAGNETIC_FIELD_NOISE;
             scale_noise = (double) Math.Pow(10,-15);
             skew_noise = (double) Math.Pow(10,-15);
         }
@@ -279,7 +282,7 @@ public static class Kalman_class
             P.At(4, 4, (double)Math.Pow(10, -3));
             P.At(5, 5, (double)Math.Pow(10, -3));
             restart = true;
-        }
+        } 
 
         Tuple<Matrix, Matrix> KF_result;
         KF_result = KF_Cholesky_update(P,z,R,H);
@@ -346,7 +349,7 @@ public static class Kalman_class
         {
             Matrix Initia_quat = new DenseMatrix(1, 4, 0);
             Initia_quat.At(0, 0, 1);
-            State = new Kalman_class.State(Math.Pow(10, 2), Math.Pow(10, 2), Math.Pow(10, -3),
+            State = new Kalman_class.State(ACCLERATION_NOISE, MAGNETIC_FIELD_NOISE, ANGULAR_VELOCITY_NOISE,
                 Math.Pow(10, -6), Math.Pow(10, -15), Math.Pow(10, -15), Initia_quat);
         }
 
