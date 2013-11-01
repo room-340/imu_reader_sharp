@@ -3,8 +3,8 @@ using MathNet.Numerics.LinearAlgebra.Double;
 
 public static class Kalman_class
 {
-    public const double ACCLERATION_NOISE = 100;
-    public const double MAGNETIC_FIELD_NOISE = 100;
+    public const double ACCLERATION_NOISE = 1.0;
+    public const double MAGNETIC_FIELD_NOISE = 1.0;
     public const double ANGULAR_VELOCITY_NOISE = 0.001;
     public struct Parameters
     {
@@ -71,7 +71,7 @@ public static class Kalman_class
             
             R.At(2, 2, magn_noise);
             
-            Q = new DiagonalMatrix(15, 15, skew_noise);
+            Q = new DenseMatrix(15, 15, 0);                   
             
             Q.At(0, 0, angle_noise);
             Q.At(1, 1, angle_noise);
@@ -85,7 +85,15 @@ public static class Kalman_class
             Q.At(7, 7, scale_noise);
             Q.At(8, 8, scale_noise);
 
-            P = new DiagonalMatrix(15, 15, (double) Math.Pow(10, -8));
+            Q.At(9, 9, skew_noise);
+            Q.At(10, 10, skew_noise);
+            Q.At(11, 11, skew_noise);
+
+            Q.At(12, 12, skew_noise);
+            Q.At(13, 13, skew_noise);
+            Q.At(14, 14, skew_noise);
+
+            P = new DenseMatrix(15, 15, 0);            
 
             P.At(0, 0, (double)Math.Pow(10, -1));
             P.At(1, 1, (double)Math.Pow(10, -1));
@@ -94,6 +102,18 @@ public static class Kalman_class
             P.At(3, 3, (double)Math.Pow(10, -3));
             P.At(4, 4, (double)Math.Pow(10, -3));
             P.At(5, 5, (double)Math.Pow(10, -3));
+
+            P.At(6, 6, (double)Math.Pow(10, -8));
+            P.At(7, 7, (double)Math.Pow(10, -8));
+            P.At(8, 8, (double)Math.Pow(10, -8));
+
+            P.At(9, 9, (double)Math.Pow(10, -8));
+            P.At(10, 10, (double)Math.Pow(10, -8));
+            P.At(11, 11, (double)Math.Pow(10, -8));
+
+            P.At(12, 12, (double)Math.Pow(10, -8));
+            P.At(13, 13, (double)Math.Pow(10, -8));
+            P.At(14, 14, (double)Math.Pow(10, -8));
 
             dw = new DenseMatrix(3, 1, 0);
 
@@ -109,7 +129,7 @@ public static class Kalman_class
     public static Tuple <Vector, Sensors, State> AHRS_LKF_EULER(Sensors Sense, State State, Parameters Param)
     {
         Vector Attitude = new DenseVector(6, 0);
-        
+        bool restart = false;
         // get sensor data
         Matrix m = Sense.m;
         Matrix a = Sense.a;
@@ -191,19 +211,31 @@ public static class Kalman_class
         B.At(2, 1, dG.At(5, 0));
         B.At(2, 2, dB.At(2, 0));
 
+
         Matrix Omegab_ib;
         Omegab_ib = Matrix_Minus(Matrix_Mult(Matrix_Minus(new DiagonalMatrix(3, 3, 1), B), Wb),dw);
-        
+
+        if (q.At(0, 0).ToString() == "NaN")
+        {
+            restart = true;
+        }
+
         //Quternion calculation
         q = mrotate(q, Omegab_ib, dT);
 
+        if (q.At(0,0).ToString() == "NaN")
+        {
+            restart = true;
+        }
+
         //DCM calculation
         Matrix Cbn = quat_to_DCM(q);
+
         //Gyro Angles
         Matrix angles = dcm2angle(Cbn);
         double Psi = (double) angles.At(0, 0);
         double Theta = (double) angles.At(0, 1);
-        double Gamma = (double) angles.At(0, 2);
+        double Gamma = (double) angles.At(0, 2);        
 
         //Acceleration Angles
         double ThetaAcc = (double)Math.Atan2(Ab.At(0, 0), Math.Sqrt(Ab.At(1, 0) * Ab.At(1, 0) + Ab.At(2, 0) * Ab.At(2, 0)));
@@ -269,7 +301,7 @@ public static class Kalman_class
         Matrix R = State.R;
 
         P = Matrix_Plus(Matrix_Mult(Matrix_Mult(F, P), Matrix_Transpose(F)),Q);
-        bool restart = false;
+        
         if (P.At(0, 0).ToString() == "NaN")
         {
             P = new DiagonalMatrix(15, 15, (double)Math.Pow(10, -8));
@@ -282,17 +314,18 @@ public static class Kalman_class
             P.At(4, 4, (double)Math.Pow(10, -3));
             P.At(5, 5, (double)Math.Pow(10, -3));
             restart = true;
-        } 
+        }
 
         Tuple<Matrix, Matrix> KF_result;
         KF_result = KF_Cholesky_update(P,z,R,H);
         Matrix xf = KF_result.Item1;
-        P = KF_result.Item2;        
+        P = KF_result.Item2;
 
         Matrix df_hat = new DenseMatrix(3, 1, 0);
         df_hat.At(0, 0, xf.At(0, 0));
         df_hat.At(1, 0, xf.At(1, 0));
         df_hat.At(2, 0, xf.At(2, 0));
+        
 
         Matrix dw_hat = new DenseMatrix(3, 1, 0);
         dw_hat.At(0, 0, xf.At(3, 0));
@@ -314,6 +347,8 @@ public static class Kalman_class
         dB = Matrix_Plus(dB, dB_hat);
         dG = Matrix_Plus(dG, dG_hat);
 
+
+
         Matrix dCbn = new DenseMatrix(3, 3, 0);
 
         dCbn.At(0, 1, -df_hat.At(2, 0));
@@ -323,10 +358,26 @@ public static class Kalman_class
         dCbn.At(2, 0, -df_hat.At(1, 0));
         dCbn.At(2, 1, df_hat.At(0, 0));
 
-        Cbn = Matrix_Mult(Matrix_Plus(new DiagonalMatrix(3, 3, 1), dCbn), Cbn);        
-
+        Cbn = Matrix_Mult(Matrix_Plus(new DiagonalMatrix(3, 3, 1), dCbn), Cbn);
+        if (Cbn.At(0, 0).ToString() == "NaN")
+        {
+            restart = true;
+        }
+        if (dcm2quat(Cbn).At(0, 0).ToString() == "NaN")
+        {
+            restart = true;
+        }
         q = dcm2quat(Cbn);
+        if (q.At(0, 0).ToString() == "NaN")
+        {
+            restart = true;
+        }
         q = quat_norm(q);
+
+        if (q.At(0, 0).ToString() == "NaN")
+        {
+            restart = true;
+        }
         
         Attitude.At(0, Psi);
         Attitude.At(1, Theta);
@@ -340,6 +391,7 @@ public static class Kalman_class
         State.dB = dB;
         State.dw = dw;
         State.P = P;
+
 
         Sense.w = Matrix_Transpose(Omegab_ib);
         Sense.a = a;
@@ -530,11 +582,66 @@ public static class Kalman_class
     {
         Matrix q = new DenseMatrix(1, 4, 0);
         double tr = trace (DCM);
-        double sqtrp1 = (double)Math.Sqrt(tr + 1);
-        q.At(0, 0, (double)0.5*sqtrp1);
-        q.At(0, 1, (DCM.At(1, 2) - DCM.At(2, 1)) / (2 * sqtrp1));
-        q.At(0, 2, (DCM.At(2, 0) - DCM.At(0, 2)) / (2 * sqtrp1));
-        q.At(0, 3, (DCM.At(0, 1) - DCM.At(1, 0)) / (2 * sqtrp1));
+        if (tr > 0)
+        {
+            double sqtrp1 = (double)Math.Sqrt(tr + 1);
+            q.At(0, 0, (double)0.5 * sqtrp1);
+            q.At(0, 1, (DCM.At(1, 2) - DCM.At(2, 1)) / (2 * sqtrp1));
+            q.At(0, 2, (DCM.At(2, 0) - DCM.At(0, 2)) / (2 * sqtrp1));
+            q.At(0, 3, (DCM.At(0, 1) - DCM.At(1, 0)) / (2 * sqtrp1));
+            return q;
+        }
+        else
+        {
+            Matrix d = new DenseMatrix(1,3,0);
+
+            d.At(0, 0, DCM.At(0, 0));
+            d.At(0, 1, DCM.At(1, 1));
+            d.At(0, 2, DCM.At(2, 2));
+
+            if ((d.At(0,1)>d.At(0,0)&(d.At(0,1)>d.At(0,2))))
+            {
+                double sqdip1 = (double)Math.Sqrt(d.At(0, 1) - d.At(0, 0) - d.At(0, 2) + 1);
+                q.At(0, 2, 0.5 * sqdip1);
+
+                if (sqdip1 != 0)
+                {
+                    sqdip1 = 0.5 / sqdip1;
+                }
+
+                q.At(0, 0, (DCM.At(2, 0) - DCM.At(0, 2)) * sqdip1);
+                q.At(0, 1, (DCM.At(0, 1) + DCM.At(1, 0)) * sqdip1);
+                q.At(0, 3, (DCM.At(1, 2) + DCM.At(2, 1)) * sqdip1);
+            }
+            else if (d.At(0, 2) > d.At(0, 0))
+            {
+                double sqdip1 = (double)Math.Sqrt(d.At(0, 2) - d.At(0, 0) - d.At(0, 1) + 1);
+                q.At(0, 3, 0.5 * sqdip1);
+
+                if (sqdip1 != 0)
+                {
+                    sqdip1 = 0.5 / sqdip1;
+                }
+
+                q.At(0, 0, (DCM.At(0, 1) - DCM.At(1, 0)) * sqdip1);
+                q.At(0, 1, (DCM.At(2, 0) + DCM.At(0, 2)) * sqdip1);
+                q.At(0, 2, (DCM.At(1, 2) + DCM.At(2, 1)) * sqdip1);
+            }
+            else
+            {
+                double sqdip1 = (double)Math.Sqrt(d.At(0, 0) - d.At(0, 1) - d.At(0, 2) + 1);
+                q.At(0, 1, 0.5 * sqdip1);
+                
+                if (sqdip1 != 0)
+                {
+                    sqdip1 = 0.5 * sqdip1;
+                }
+
+                q.At(0, 0, (DCM.At(1, 2) - DCM.At(2, 1)) * sqdip1);
+                q.At(0, 2, (DCM.At(0, 1) + DCM.At(1, 0)) * sqdip1);
+                q.At(0, 3, (DCM.At(2, 1) + DCM.At(1, 2)) * sqdip1);
+            }
+        }
         return q;
     }
 
