@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.fileButton = new System.Windows.Forms.Button();
             this.readButton = new System.Windows.Forms.Button();
             this.clearButton = new System.Windows.Forms.Button();
@@ -215,8 +216,9 @@
             this.Controls.Add(this.clearButton);
             this.Controls.Add(this.readButton);
             this.Controls.Add(this.fileButton);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "IMU Reader Sharp";
+            this.Text = "IMU Reader - рограмма для чтения данных с СКВП";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
