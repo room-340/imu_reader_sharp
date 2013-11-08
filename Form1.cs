@@ -202,6 +202,9 @@ namespace imu_reader_sharp
             double[,] w = new double[ticks.Length, 3];
             double[,] m = new double[ticks.Length, 3];
             double[,] q = new double[ticks.Length, 4];
+            double[] anglex = new double[ticks.Length];
+            double[] angley = new double[ticks.Length];
+            double[] anglez = new double[ticks.Length];
             double[] lat = new double[ticks2.Length];
             double[] lon = new double[ticks2.Length];
             double[] speed = new double[ticks2.Length];
@@ -347,11 +350,20 @@ namespace imu_reader_sharp
             double[] accl_c = get_accl_coefs(block_index);
             double[] gyro_c = new double[12];
 
+            double[] w_helper = new double [ticks.Length];
+
+            for (int i=0; i<w_helper.Length; i++) w_helper[i] = w[i,0];
+            anglex = Signal_processing.Zero_average_corr(w_helper, w_helper.Length);
+            for (int i=0; i<w_helper.Length; i++) w_helper[i] = w[i,1];
+            angley = Signal_processing.Zero_average_corr(w_helper, w_helper.Length);
+            for (int i=0; i<w_helper.Length; i++) w_helper[i] = w[i,2];
+            anglez = Signal_processing.Zero_average_corr(w_helper, w_helper.Length);
+
             for (int i = 0; i < k; i++)
             {
                 progressBar.Invoke(new Action(() => progressBar.Value++));
 
-                Sensors.a.At(0, 0, a[i, 0]);
+               /* Sensors.a.At(0, 0, a[i, 0]);
                 Sensors.a.At(0, 1, a[i, 1]);
                 Sensors.a.At(0, 2, a[i, 2]);
 
@@ -365,7 +377,7 @@ namespace imu_reader_sharp
 
                 AHRS_result = Kalman_class.AHRS_LKF_EULER(Sensors, State, Parameters);
 
-                State = AHRS_result.Item3;
+                State = AHRS_result.Item3;*/
                 //------------------------------------------------------------------------
                 mm = single_correction(magn_c, m[i, 0], m[i, 1], m[i, 2]);
                 ma = single_correction(accl_c, a[i, 0], a[i, 1], a[i, 2]);
@@ -381,9 +393,9 @@ namespace imu_reader_sharp
                 //mm[1] = m[i, 1];
                 //mm[2] = m[i, 2];
                 //----------------------------------------------------------------------
-                angles[0] = (AHRS_result.Item1.At(0));
-                angles[1] = (AHRS_result.Item1.At(1));
-                angles[2] = (AHRS_result.Item1.At(2));
+                angles[0] = (anglez[i]);
+                angles[1] = (angley[i]);
+                angles[2] = (anglex[i]);
 
                 // IMU
                 buf16 = (Int16)(angles[0] * 10000);
