@@ -215,6 +215,7 @@ namespace imu_reader_sharp
             byte[] buffer = new byte[2];
             byte[] buffer2 = new byte[4];
             double[] corr_mag = { 2.4912, 2.4907, 2.4998, 2.5912, 3.4920, 2.5428, 2.4593, 2.5500, 2.5196, 2.5275, 1, 2.5017, 3.7391, 2.9516, 2.4844 };
+            double[] corr_accl = { 0.12, 0.17, 0.08, 0.09, 0.1, 0.12, 0.13, 0.1, 0.1431, 0.1, 0.145, 0.05, 0.1, 0.1, 0.32};
             double[] corr_gyr = { 1.1111, 0.9333, 0.9333, 1.0185, 1.5122, 0.8355, 0.9148, 1.1154, 1.1453, 1.1129, 1.1028, 1.1160, 1.5063, 0.9, 0.9111 };
             double[,] zero_mag = { {0.1780, 0.1092, -0.0961}, {0.1259,  0.0621, -0.2346}, { 0.4120, 0.0386, 0.2578}, {0.2565, -0.0926, 0.0760}, { 0.1221, -0.0659, 0.2637},
                                    {0.4300, 0.0348,  0.2616}, {0.3156, -0.1437, -0.2155}, {-0.0928, 0.0603, 0.1485}, {0.0405,  0.3184, 0.1702}, {-0.0189,  0.0232, 0.3462},
@@ -241,11 +242,11 @@ namespace imu_reader_sharp
                         if (type[k] == 49)
                         {
                             buffer[0] = pack[7]; buffer[1] = pack[8];
-                            a[k,0] = ((double)BitConverter.ToInt16(buffer,0))*0.0018;
+                            a[k, 0] = ((double)BitConverter.ToInt16(buffer, 0)) * 0.001766834114354;
                             buffer[0] = pack[5]; buffer[1] = pack[6];
-                            a[k, 1] = (double)BitConverter.ToInt16(buffer, 0) * 0.0018;
+                            a[k, 1] = (double)BitConverter.ToInt16(buffer, 0) * 0.001766834114354;
                             buffer[0] = pack[9]; buffer[1] = pack[10];
-                            a[k, 2] = -(double)BitConverter.ToInt16(buffer, 0) * 0.0018;
+                            a[k, 2] = -(double)BitConverter.ToInt16(buffer, 0) * 0.001766834114354;
 
                             buffer[0] = pack[13]; buffer[1] = pack[14];
                             w[k, 0] = (double)BitConverter.ToInt16(buffer, 0) * 0.00053264 * corr_gyr[block_index - 1];
@@ -412,7 +413,7 @@ namespace imu_reader_sharp
                 buf16 = (Int16)(mw[2] * 3000);
                 str_imu.Write(buf16);
 
-                buf16 = (Int16)(ma[0] * 3000);
+                buf16 = (Int16)((a[i,0]+corr_accl[block_index-1]) * 3000);
                 str_imu.Write(buf16);
                 buf16 = (Int16)(ma[1] * 3000);
                 str_imu.Write(buf16);
@@ -761,9 +762,9 @@ namespace imu_reader_sharp
                     result = temp13;
                     break;
                 case 14:
-                    double[] temp14 = {0.046558441422710,   0.042940673413982,  -0.045419253970332,   0.111789858589594,
-                      -0.100811493207000,  -0.062191636788101,  -0.070385059467037,   0.079127029426911,   
-                       0.054730589641503,   -0.120689833789384,  -0.040779188055713,  -0.135332965285551 };
+                    double[] temp14 = { -0.043389279255941,   0.032040555100593,  -0.039007787811306,   0.010766532942567,
+                     -0.020012807649709,  -0.000796202538381,   0.040226304587731,   0.039686343770531,
+                      0.052905659051598,  -0.020979990242796,  -0.013677822992201,  -0.133714687976353};
                     result = temp14;
                     break;
                 case 15:
