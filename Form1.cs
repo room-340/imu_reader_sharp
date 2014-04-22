@@ -224,6 +224,7 @@ namespace imu_reader_sharp
             this.Update();
             for (int i = 0; i < full_file.Length - 30; i++)
             {
+                Application.DoEvents();
                 if ((i < full_file.Length - 35)&&(full_file[i + 34] == 3) && (full_file[i + 33] == 16) &&
                     (full_file[i] == 16) && (full_file[i + 1] == 49))   // условие начала IMU пакета
                 {
@@ -362,6 +363,7 @@ namespace imu_reader_sharp
 
             for (int i = 0; i < k; i++)
             {
+                Application.DoEvents();
                 progressBar.Invoke(new Action(() => progressBar.Value++));
 
                /* Sensors.a.At(0, 0, a[i, 0]);
@@ -439,6 +441,7 @@ namespace imu_reader_sharp
             }
             for (int i = 0; i < k2; i++)
             {
+                Application.DoEvents();
                 progressBar.Invoke(new Action(() => progressBar.Value++));
                 // GPS
                 bufD = (Double)(lat[i]) / ((180 / Math.PI) * 16.66);
@@ -464,6 +467,12 @@ namespace imu_reader_sharp
                 str_gps.Write(buf8);
                 str_gps.Write(buf8);
             }
+            // Запись даты в конец gps файла
+            int day = (int)date[k2 - 1] / 10000;
+            int month = (int)(date[k2 - 1] - day * 10000) / 100;
+            int year = (int)(2000 + date[k2 - 1] - day * 10000 - month * 100);
+            string datarec = String.Format("{0:d2}.{1:d2}.{2:d4}", day, month, year);
+            str_gps.Write(datarec);
             str_imu.Flush();
             str_imu.Close();
             str_gps.Flush();
@@ -563,6 +572,8 @@ namespace imu_reader_sharp
                     int packet_count = 0;
                     packetBox.Text = "" + packet_count;
                     packetBox.Update();
+                    active_com.ReadTimeout = 50; // maximum amount of time allowed
+                                                 // for perfoming one reading operation
                     for (int q = 0; q < numfiles; q++)
                     {
                         progressBar.Value++;
@@ -573,10 +584,10 @@ namespace imu_reader_sharp
                         numb = active_com.Read(buffer, 0, 4);
                         file2add = new file(file_count); // для каждой записи создается новый объект file
                         //str_wr.WriteLine("file " + q + " read bytes: " + numb);
-                        while (fsum != 4096 * 255)
+                        while (fsum != 4096 * 255)  // выход из цикла если все значения равны FF
                         {
                             fsum = 0;
-                            
+                            Application.DoEvents();
                             active_com.Write("n");
                             Thread.Sleep(100);
                             
