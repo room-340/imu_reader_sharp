@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            this.fileButton = new System.Windows.Forms.Button();
             this.readButton = new System.Windows.Forms.Button();
             this.clearButton = new System.Windows.Forms.Button();
             this.comBox = new System.Windows.Forms.ListBox();
@@ -46,18 +45,6 @@
             this.saveButton = new System.Windows.Forms.Button();
             this.filePickLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
-            // fileButton
-            // 
-            this.fileButton.Enabled = false;
-            this.fileButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.fileButton.Location = new System.Drawing.Point(12, 12);
-            this.fileButton.Name = "fileButton";
-            this.fileButton.Size = new System.Drawing.Size(156, 46);
-            this.fileButton.TabIndex = 0;
-            this.fileButton.Text = "Выбрать файл для сохранения";
-            this.fileButton.UseVisualStyleBackColor = true;
-            this.fileButton.Click += new System.EventHandler(this.fileButton_Click);
             // 
             // readButton
             // 
@@ -104,9 +91,9 @@
             // 
             this.fileLabel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.fileLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.fileLabel.Location = new System.Drawing.Point(195, 35);
+            this.fileLabel.Location = new System.Drawing.Point(12, 35);
             this.fileLabel.Name = "fileLabel";
-            this.fileLabel.Size = new System.Drawing.Size(286, 23);
+            this.fileLabel.Size = new System.Drawing.Size(508, 23);
             this.fileLabel.TabIndex = 5;
             this.fileLabel.Text = "Файл";
             this.fileLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -125,11 +112,11 @@
             // fileInfoLabel
             // 
             this.fileInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.fileInfoLabel.Location = new System.Drawing.Point(195, 12);
+            this.fileInfoLabel.Location = new System.Drawing.Point(144, 12);
             this.fileInfoLabel.Name = "fileInfoLabel";
             this.fileInfoLabel.Size = new System.Drawing.Size(286, 23);
             this.fileInfoLabel.TabIndex = 7;
-            this.fileInfoLabel.Text = "Запись будет сохранена как:";
+            this.fileInfoLabel.Text = "Последнее сохранение:";
             this.fileInfoLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // comLabel
@@ -215,10 +202,9 @@
             this.Controls.Add(this.comBox);
             this.Controls.Add(this.clearButton);
             this.Controls.Add(this.readButton);
-            this.Controls.Add(this.fileButton);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "IMU Reader - рограмма для чтения данных с СКВП";
+            this.Text = "IMU Reader - Программа для чтения данных с СКВП";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
@@ -228,7 +214,6 @@
 
         #endregion
 
-        private System.Windows.Forms.Button fileButton;
         private System.Windows.Forms.Button readButton;
         private System.Windows.Forms.Button clearButton;
         private System.Windows.Forms.ListBox comBox;

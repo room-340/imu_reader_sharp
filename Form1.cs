@@ -90,35 +90,6 @@ namespace imu_reader_sharp
             com_search();
         }
 
-        // Выбор файла для сохранения данных
-        private void fileButton_Click(object sender, EventArgs e)
-        {
-            saveFileDialog.InitialDirectory = "";
-            saveFileDialog.Filter = "Все файлы (*.*)|*.*";
-            saveFileDialog.Title = "Выберите файл для сохранения данных";
-            DialogResult result = saveFileDialog.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                flags[0] = true;
-                string temp_file;
-                string[] file_name_parts = saveFileDialog.FileName.Split('\\');
-                temp_file = file_name_parts[file_name_parts.Length - 1];
-                file_name_parts = temp_file.Split('.');
-                fileLabel.Text = file_name_parts[0] + ".imu/.gps";
-                infoLabel.Text = "Готовность к сохранению";
-                infoLabel.Update();
-                fileLabel.Update();
-                log_name = saveFileDialog.FileName;
-            }
-            else
-            {
-                flags[0] = false;
-                infoLabel.Text = "Неудалось выбрать файл";
-                fileLabel.Text = "Недоступно";
-            }
-            check_save_available(sender, e);
-        }
-
         // Проверка на уловие доступности кнопки чтения
         private void check_read_available(object sender, EventArgs e)
         {
@@ -487,6 +458,7 @@ namespace imu_reader_sharp
         private void readButton_Click(object sender, EventArgs e)
         {
             readButton.Enabled = false;
+            saveButton.Enabled = false;
             try
             {
                 fileBox.Items.Clear();
@@ -589,7 +561,7 @@ namespace imu_reader_sharp
                             fsum = 0;
                             Application.DoEvents();
                             active_com.Write("n");
-                            Thread.Sleep(100);
+                            Thread.Sleep(40);
                             
                             numb = active_com.Read(buffer, 0, 4096);
                             for (int w = 0; w < numb; w++)
@@ -622,7 +594,7 @@ namespace imu_reader_sharp
                 {
                     Disconnect();
                     //MessageBox.Show("Чтение завершено. " + control.ElapsedMilliseconds + " ms elapsed.");
-                    fileButton.Enabled = true;
+                    saveButton.Enabled = true;
                     flags[1] = true;    // this flag is used to keep readButton locked (unavailble)
                     MessageBox.Show("Чтение завершено.");
                     files_st = new file[files_q.Count];
@@ -656,6 +628,29 @@ namespace imu_reader_sharp
 
         private void saveButton_Click(object sender, EventArgs e)
         {
+            saveFileDialog.InitialDirectory = "";
+            saveFileDialog.Filter = "Все файлы (*.*)|*.*";
+            saveFileDialog.Title = "Выберите файл для сохранения данных";
+            DialogResult result = saveFileDialog.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                flags[0] = true;
+                string temp_file;
+                string[] file_name_parts = saveFileDialog.FileName.Split('\\');
+                temp_file = file_name_parts[file_name_parts.Length - 1];
+                file_name_parts = temp_file.Split('.');
+                fileLabel.Text = file_name_parts[0] + ".imu/.gps";
+                infoLabel.Text = "Готовность к сохранению";
+                infoLabel.Update();
+                fileLabel.Update();
+                log_name = saveFileDialog.FileName;
+            }
+            else
+            {
+                flags[0] = false;
+                infoLabel.Text = "Неудалось выбрать файл";
+                fileLabel.Text = "Недоступно";
+            }
             try
             {
                 if (files_st.Length != 0)
