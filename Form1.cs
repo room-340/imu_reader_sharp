@@ -544,7 +544,7 @@ namespace imu_reader_sharp
                     int packet_count = 0;
                     packetBox.Text = "" + packet_count;
                     packetBox.Update();
-                    active_com.ReadTimeout = 50; // maximum amount of time allowed
+                    active_com.ReadTimeout = 500; // maximum amount of time allowed
                                                  // for perfoming one reading operation
                     for (int q = 0; q < numfiles; q++)
                     {
@@ -552,7 +552,7 @@ namespace imu_reader_sharp
                         fsum = 0;
                         
                         active_com.Write("r");
-                        Thread.Sleep(20);
+                        Thread.Sleep(40);
                         numb = active_com.Read(buffer, 0, 4);
                         file2add = new file(file_count); // для каждой записи создается новый объект file
                         //str_wr.WriteLine("file " + q + " read bytes: " + numb);
