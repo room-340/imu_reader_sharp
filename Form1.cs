@@ -604,6 +604,7 @@ namespace imu_reader_sharp
                         files_st[q] = (file)files_q.Dequeue();
                         fileBox.Items.Add("Запись " + files_st[q].get_id() + " - " + (files_st[q].get_size())/194700 + " мин");
                     }
+                    check_save_available(sender, e);
                 }
             }
             catch (Exception crit_error)
@@ -628,6 +629,18 @@ namespace imu_reader_sharp
 
         private void saveButton_Click(object sender, EventArgs e)
         {
+            if (fileBox.Items.Count == 0)
+            {
+                MessageBox.Show("Нет файлов. Возможные причины:\n" +
+                    "- файлы не были считаны, нажмите кнопку считать данные.\n" +
+                    "- на данном блоке нету никаких записей.");
+                return;
+            }
+            else
+            {
+                if (fileBox.SelectedItem == null)
+                    fileBox.SelectedIndex = 0;
+            }
             saveFileDialog.InitialDirectory = "";
             saveFileDialog.Filter = "Все файлы (*.*)|*.*";
             saveFileDialog.Title = "Выберите файл для сохранения данных";
@@ -647,9 +660,10 @@ namespace imu_reader_sharp
             }
             else
             {
-                flags[0] = false;
+                //flags[0] = false;
                 infoLabel.Text = "Неудалось выбрать файл";
                 fileLabel.Text = "Недоступно";
+                return;
             }
             try
             {
@@ -674,7 +688,7 @@ namespace imu_reader_sharp
 
         private void check_save_available(object sender, EventArgs e)
         {
-            if ((fileBox.Items.Count != 0) && (flags[0]))
+            if ((fileBox.Items.Count != 0))
             {
                 if (fileBox.SelectedItem == null)
                     fileBox.SelectedIndex = 0;
