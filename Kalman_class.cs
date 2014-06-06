@@ -296,6 +296,12 @@ public static class Kalman_class
         H.At(1, 1, 1);
         H.At(2, 2, 1);
 
+        if (Math.Abs(Math.Sqrt(Ab.At(0, 0) + Ab.At(1, 0) + Ab.At(2, 0))) > Param.accl_threshold)
+        {
+            H.At(0, 0, 0);
+            H.At(1, 1, 0);
+        }
+
         //Kalman Filter
         Matrix Q = State.Q;
         Matrix R = State.R;
